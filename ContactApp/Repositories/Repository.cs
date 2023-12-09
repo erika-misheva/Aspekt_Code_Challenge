@@ -6,7 +6,7 @@ namespace ContactApp.Repositories
 {
     public class Repository<TEntity> : IRepository<TEntity> where TEntity : BaseModel
     {
-        private readonly DataContext _context;
+        protected readonly DataContext _context;
 
         public Repository(DataContext dataContext)
         {

@@ -11,10 +11,10 @@ namespace ContactApp.Controllers
     [ApiController]
     public class CountriesController : ControllerBase
     {
-        private readonly ICountryRepository _countryRepository;
+        private readonly IRepository<Country> _countryRepository;
         private readonly IMapper _mapper;
 
-        public CountriesController(ICountryRepository countryRepository, IMapper mapper)
+        public CountriesController(IRepository<Country> countryRepository, IMapper mapper)
         {
             _countryRepository = countryRepository;
             _mapper = mapper;
@@ -24,7 +24,7 @@ namespace ContactApp.Controllers
 
         public ActionResult<List<EntityDto>> GetCountries()
         {
-            var countries = _countryRepository.GetCountries();
+            var countries = _countryRepository.GetAll();
             return _mapper.Map<List<EntityDto>>(countries);
         }
 
@@ -32,7 +32,7 @@ namespace ContactApp.Controllers
 
         public ActionResult<EntityDto> GetCountry(int id)
         {
-            var country = _countryRepository.GetCountry(id);
+            var country = _countryRepository.GetById(id);
 
             if (country is null)
             {
@@ -47,7 +47,7 @@ namespace ContactApp.Controllers
         {
             Country newCountry = _mapper.Map<Country>(countryDto);
 
-            _countryRepository.CreateCountry(newCountry);
+            _countryRepository.Add(newCountry);
             _countryRepository.Saved();
 
             return StatusCode(StatusCodes.Status201Created);
@@ -57,11 +57,11 @@ namespace ContactApp.Controllers
         public ActionResult Update(int id, UpdateEntityDto updateCountry)
         {
 
-            if (!_countryRepository.CountryExists(id))
+            if (!_countryRepository.EntityExists(id))
             {
                 return NotFound();
             }
-            Country country = _countryRepository.GetCountry(id);
+            Country country = _countryRepository.GetById(id);
             country.Name = updateCountry.Name;
 
             _countryRepository.Saved();
@@ -72,12 +72,12 @@ namespace ContactApp.Controllers
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
-            if (!_countryRepository.CountryExists(id))
+            if (!_countryRepository.EntityExists(id))
             {
                 return NotFound();
             }
 
-            _countryRepository.DeleteCountry(id);
+            _countryRepository.Delete(id);
             _countryRepository.Saved();
 
             return Ok();

@@ -25,7 +25,7 @@ namespace ContactApp.Controllers
         [HttpGet]
         public ActionResult<List<EntityDto>> GetContacts()
         {
-            var contacts = _contactRepository.GetContacts();
+            var contacts = _contactRepository.GetAll();
             return _mapper.Map<List<EntityDto>>(contacts);
         }
 
@@ -33,7 +33,7 @@ namespace ContactApp.Controllers
 
         public ActionResult<EntityDto> GetContact(int id)
         {
-            var contact = _contactRepository.GetContact(id);
+            var contact = _contactRepository.GetById(id);
 
             if (contact is null)
             {
@@ -48,7 +48,7 @@ namespace ContactApp.Controllers
         {
             Contact newContact = _mapper.Map<Contact>(contactDto);
 
-            _contactRepository.CreateContact(newContact);
+            _contactRepository.Add(newContact);
             _contactRepository.Saved();
 
             return StatusCode(StatusCodes.Status201Created);
@@ -59,11 +59,11 @@ namespace ContactApp.Controllers
         public ActionResult Update(int id, UpdateEntityDto updateContact)
         {
 
-            if (!_contactRepository.ContactExists(id))
+            if (!_contactRepository.EntityExists(id))
             {
                 return NotFound();
             }
-            Contact contact = _contactRepository.GetContact(id);
+            Contact contact = _contactRepository.GetById(id);
             contact.Name = updateContact.Name;
 
             _contactRepository.Saved();
@@ -74,20 +74,20 @@ namespace ContactApp.Controllers
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
-            if (!_contactRepository.ContactExists(id))
+            if (!_contactRepository.EntityExists(id))
             {
                 return NotFound();
             }
 
-            _contactRepository.DeleteContact(id);
+            _contactRepository.Delete(id);
             _contactRepository.Saved();
 
             return Ok();
         }
 
-        [HttpGet("comapny/{companyId}/country/{countryId}")]
+        [HttpGet("filter")]
 
-        public ActionResult<List<ContactDto>> FilterContacts (int companyId, int countryId)
+        public ActionResult<List<ContactDto>> FilterContacts (int? countryId = null, int? companyId = null)
         {
             List<Contact> contacts = _contactRepository.FilterContacts(countryId, companyId).ToList();
             return _mapper.Map<List<ContactDto>>(contacts);

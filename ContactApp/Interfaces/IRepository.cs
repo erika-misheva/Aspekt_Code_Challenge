@@ -2,7 +2,7 @@
 
 namespace ContactApp.Interfaces
 {
-    interface IRepository<TEntity>
+    public interface IRepository<TEntity>
     {
         bool EntityExists(int id);
         TEntity GetById(int id);

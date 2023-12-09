@@ -12,10 +12,10 @@ namespace ContactApp.Controllers
     [ApiController]
     public class CompaniesController : ControllerBase
     {
-        private readonly ICompanyRepository _companyRepository;
+        private readonly IRepository<Company> _companyRepository;
         private readonly IMapper _mapper;
 
-        public CompaniesController(ICompanyRepository companyRepository, IMapper mapper)
+        public CompaniesController(IRepository<Company> companyRepository, IMapper mapper)
         {
             _companyRepository = companyRepository;
             _mapper = mapper;
@@ -25,7 +25,7 @@ namespace ContactApp.Controllers
 
         public ActionResult<List<EntityDto>> GetCompanies()
         {
-            var companies = _companyRepository.GetCompanies();
+            var companies = _companyRepository.GetAll();
             return _mapper.Map<List<EntityDto>>(companies);
         }
 
@@ -33,7 +33,7 @@ namespace ContactApp.Controllers
 
         public ActionResult<EntityDto> GetCompany(int id)
         {
-            var company = _companyRepository.GetCompany(id);
+            var company = _companyRepository.GetById(id);
 
             if (company is null)
             {
@@ -48,7 +48,7 @@ namespace ContactApp.Controllers
         {
             Company newCompany = _mapper.Map<Company>(companyDto);
 
-            _companyRepository.CreateCompany(newCompany);
+            _companyRepository.Add(newCompany);
             _companyRepository.Saved();
 
             return StatusCode(StatusCodes.Status201Created);
@@ -58,11 +58,11 @@ namespace ContactApp.Controllers
         public ActionResult Update(int id, UpdateEntityDto updateCompany)
         {
 
-            if (!_companyRepository.CompanyExists(id))
+            if (!_companyRepository.EntityExists(id))
             {
                 return NotFound();
             }
-            Company company = _companyRepository.GetCompany(id);
+            Company company = _companyRepository.GetById(id);
             company.Name = updateCompany.Name;
 
             _companyRepository.Saved();
@@ -73,12 +73,12 @@ namespace ContactApp.Controllers
         [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
-            if (!_companyRepository.CompanyExists(id))
+            if (!_companyRepository.EntityExists(id))
             {
                 return NotFound();
             }
 
-            _companyRepository.DeleteCompany(id);
+            _companyRepository.Delete(id);
             _companyRepository.Saved();
 
             return Ok();

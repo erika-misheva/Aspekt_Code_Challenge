@@ -6,48 +6,31 @@ using System.Diagnostics.Metrics;
 
 namespace ContactApp.Repositories
 {
-    public class ContactRepository : IContactRepository
+    public class ContactRepository : Repository<Contact>, IContactRepository
     {
-        private DataContext _context;
-
-        public ContactRepository(DataContext dataContext)
+        public ContactRepository(DataContext dataContext) : base(dataContext)
         {
-            _context = dataContext;
-        }
-        public bool ContactExists(int id)
-        {
-            return _context.Contacts.Any(country => country.Id == id);
+            
         }
 
-        public void CreateContact(Contact contact)
+        public ICollection<Contact> FilterContacts(int? countryId = null, int? companyId = null)
         {
-            _context.Add(contact);
-        
-        }
+            var query = _context.Contacts.AsQueryable();
 
-        public void DeleteContact(int id)
-        {
-            Contact contact = _context.Contacts.FirstOrDefault(co => co.Id == id);
-            _context.Remove(contact);
-      
-        }
+            if (countryId.HasValue)
+            {
+                query = query.Where(co => co.CountryId == countryId.Value);
+            }
 
-        public ICollection<Contact> FilterContacts(int countryId, int companyId)
-        {
-            return _context.Contacts.Where(co => co.CountryId == countryId && co.CompanyId == companyId)
+            if (companyId.HasValue)
+            {
+                query = query.Where(co => co.CompanyId == companyId.Value);
+            }
+
+            return query
                 .Include(c => c.Company)
                 .Include(c => c.Country)
                 .ToList();
-        }
-
-        public Contact GetContact(int id)
-        {
-            return _context.Contacts.FirstOrDefault(c => c.Id == id);
-        }
-
-        public ICollection<Contact> GetContacts()
-        {
-            return _context.Contacts.ToList();
         }
 
         public List<Contact> GetContactsWithCompanyAndCountry()
@@ -58,16 +41,6 @@ namespace ContactApp.Repositories
                 .ToList();
         }
 
-        public bool Saved()
-        {
-            var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
-        }
-
-        public void UpdateContact(Contact contact)
-        {
-            _context.Update(contact);
      
-        }
     }
 }
