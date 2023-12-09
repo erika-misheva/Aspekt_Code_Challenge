@@ -23,17 +23,17 @@ namespace ContactApp.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<EntityDto>> GetContacts()
+        public async Task<ActionResult<List<EntityDto>>> GetContacts()
         {
-            var contacts = _contactRepository.GetAll();
+            var contacts = await _contactRepository.GetAllAsync();
             return _mapper.Map<List<EntityDto>>(contacts);
         }
 
         [HttpGet("{id}")]
 
-        public ActionResult<EntityDto> GetContact(int id)
+        public async Task<ActionResult<EntityDto>> GetContact(int id)
         {
-            var contact = _contactRepository.GetById(id);
+            var contact = await _contactRepository.GetByIdAsync(id);
 
             if (contact is null)
             {
@@ -44,60 +44,60 @@ namespace ContactApp.Controllers
         }
 
         [HttpPost]
-        public ActionResult Create(CreateContactDto contactDto)
+        public async Task<ActionResult> Create(CreateContactDto contactDto)
         {
             Contact newContact = _mapper.Map<Contact>(contactDto);
 
-            _contactRepository.Add(newContact);
-            _contactRepository.Saved();
+            await _contactRepository.AddAsync(newContact);
+            await _contactRepository.SavedAsync();
 
             return StatusCode(StatusCodes.Status201Created);
         }
 
 
         [HttpPut("{id}")]
-        public ActionResult Update(int id, UpdateEntityDto updateContact)
+        public async Task<ActionResult> Update(int id, UpdateEntityDto updateContact)
         {
 
-            if (!_contactRepository.EntityExists(id))
+            if (! await _contactRepository.EntityExistsAsync(id))
             {
                 return NotFound();
             }
-            Contact contact = _contactRepository.GetById(id);
+            Contact contact = await _contactRepository.GetByIdAsync(id);
             contact.Name = updateContact.Name;
 
-            _contactRepository.Saved();
+            await _contactRepository.SavedAsync();
 
             return Ok();
         }
 
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> DeleteAsync(int id)
         {
-            if (!_contactRepository.EntityExists(id))
+            if (!await _contactRepository.EntityExistsAsync(id))
             {
                 return NotFound();
             }
 
-            _contactRepository.Delete(id);
-            _contactRepository.Saved();
+            await _contactRepository.DeleteAsync(id);
+            await _contactRepository.SavedAsync();
 
             return Ok();
         }
 
         [HttpGet("filter")]
 
-        public ActionResult<List<ContactDto>> FilterContacts (int? countryId = null, int? companyId = null)
+        public async Task<ActionResult<List<ContactDto>>> FilterContacts (int? countryId = null, int? companyId = null)
         {
-            List<Contact> contacts = _contactRepository.FilterContacts(countryId, companyId).ToList();
+            List<Contact> contacts = (List<Contact>)await _contactRepository.FilterContactsAsync(countryId, companyId);
             return _mapper.Map<List<ContactDto>>(contacts);
         }
 
         [HttpGet("fullInformation/contacts")]
 
-        public ActionResult<List<ContactDto>> GetContactsWithCompanyAndCountry()
+        public async Task<ActionResult<List<ContactDto>>> GetContactsWithCompanyAndCountry()
         {
-            List<Contact> contacts = _contactRepository.GetContactsWithCompanyAndCountry().ToList();
+            List<Contact> contacts = await _contactRepository.GetContactsWithCompanyAndCountryAsync();
             return _mapper.Map<List<ContactDto>>(contacts);
         }
     }

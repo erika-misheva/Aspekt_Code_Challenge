@@ -1,6 +1,7 @@
 ﻿using ContactApp.Data;
 using ContactApp.Domain.Models;
 using ContactApp.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace ContactApp.Repositories
 {
@@ -12,45 +13,46 @@ namespace ContactApp.Repositories
         {
             _context = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
         }
-
-        public bool EntityExists(int id)
+        public async Task<bool> EntityExistsAsync(int id)
         {
-            return _context.Set<TEntity>().Any(entity => entity.Id == id);
+            return await _context.Set<TEntity>().AnyAsync(entity => entity.Id == id);
         }
 
-        public TEntity GetById(int id)
+        public async Task<TEntity> GetByIdAsync(int id)
         {
-            return _context.Set<TEntity>().Find(id);
+            return await _context.Set<TEntity>().FindAsync(id);
         }
 
-        public IEnumerable<TEntity> GetAll()
+        public async Task<IEnumerable<TEntity>> GetAllAsync()
         {
-            return _context.Set<TEntity>().ToList();
+            return await _context.Set<TEntity>().ToListAsync();
         }
 
-        public void Add(TEntity entity)
+        public async Task AddAsync(TEntity entity)
         {
-            _context.Set<TEntity>().Add(entity);
+            await _context.Set<TEntity>().AddAsync(entity);
         }
 
-        public void Update(TEntity entity)
+        public void UpdateAsync(TEntity entity)
         {
             _context.Set<TEntity>().Update(entity);
         }
 
-        public void Delete(int id)
+        public async Task DeleteAsync(int id)
         {
-            TEntity entityToDelete = _context.Set<TEntity>().Find(id);
+            TEntity entityToDelete = await _context.Set<TEntity>().FindAsync(id);
             if (entityToDelete != null)
             {
                 _context.Set<TEntity>().Remove(entityToDelete);
             }
         }
 
-        public bool Saved()
+        public async Task<bool> SavedAsync()
         {
-            return _context.SaveChanges() > 0;
+            return await _context.SaveChangesAsync() > 0;
         }
+
+       
     }
 
 }

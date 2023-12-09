@@ -4,12 +4,12 @@ namespace ContactApp.Interfaces
 {
     public interface IRepository<TEntity>
     {
-        bool EntityExists(int id);
-        TEntity GetById(int id);
-        IEnumerable<TEntity> GetAll();
-        void Add(TEntity entity);
-        void Update(TEntity entity);
-        void Delete(int id);
-        bool Saved();
+        Task<bool> EntityExistsAsync(int id);
+        Task<TEntity> GetByIdAsync(int id);
+        Task<IEnumerable<TEntity>> GetAllAsync();
+        Task AddAsync(TEntity entity);
+        void UpdateAsync(TEntity entity);
+        Task DeleteAsync(int id);
+        Task<bool> SavedAsync();
     }
 }

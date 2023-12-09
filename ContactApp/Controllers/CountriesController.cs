@@ -22,17 +22,17 @@ namespace ContactApp.Controllers
 
         [HttpGet]
 
-        public ActionResult<List<EntityDto>> GetCountries()
+        public async Task<ActionResult<List<EntityDto>>> GetCountries()
         {
-            var countries = _countryRepository.GetAll();
+            var countries = await _countryRepository.GetAllAsync();
             return _mapper.Map<List<EntityDto>>(countries);
         }
 
         [HttpGet("{id}")]
 
-        public ActionResult<EntityDto> GetCountry(int id)
+        public async Task<ActionResult<EntityDto>> GetCountry(int id)
         {
-            var country = _countryRepository.GetById(id);
+            var country = await _countryRepository.GetByIdAsync(id);
 
             if (country is null)
             {
@@ -43,42 +43,42 @@ namespace ContactApp.Controllers
         }
 
         [HttpPost]
-        public ActionResult Create(UpdateEntityDto countryDto)
+        public async Task<ActionResult> Create(UpdateEntityDto countryDto)
         {
             Country newCountry = _mapper.Map<Country>(countryDto);
 
-            _countryRepository.Add(newCountry);
-            _countryRepository.Saved();
+            await _countryRepository.AddAsync(newCountry);
+            await _countryRepository.SavedAsync();
 
             return StatusCode(StatusCodes.Status201Created);
         }
 
         [HttpPut("{id}")]
-        public ActionResult Update(int id, UpdateEntityDto updateCountry)
+        public async Task<ActionResult> Update(int id, UpdateEntityDto updateCountry)
         {
 
-            if (!_countryRepository.EntityExists(id))
+            if (! await _countryRepository.EntityExistsAsync(id))
             {
                 return NotFound();
             }
-            Country country = _countryRepository.GetById(id);
+            Country country = await _countryRepository.GetByIdAsync(id);
             country.Name = updateCountry.Name;
 
-            _countryRepository.Saved();
+            await _countryRepository.GetAllAsync();
 
             return Ok();
         }
 
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            if (!_countryRepository.EntityExists(id))
+            if (!await _countryRepository.EntityExistsAsync(id))
             {
                 return NotFound();
             }
 
-            _countryRepository.Delete(id);
-            _countryRepository.Saved();
+           await _countryRepository.DeleteAsync(id);
+           await _countryRepository.SavedAsync();
 
             return Ok();
         }

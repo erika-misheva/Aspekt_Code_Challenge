@@ -13,7 +13,7 @@ namespace ContactApp.Repositories
             
         }
 
-        public ICollection<Contact> FilterContacts(int? countryId = null, int? companyId = null)
+        public async Task<ICollection<Contact>> FilterContactsAsync(int? countryId = null, int? companyId = null)
         {
             var query = _context.Contacts.AsQueryable();
 
@@ -27,20 +27,20 @@ namespace ContactApp.Repositories
                 query = query.Where(co => co.CompanyId == companyId.Value);
             }
 
-            return query
+            return await query
                 .Include(c => c.Company)
                 .Include(c => c.Country)
-                .ToList();
+                .ToListAsync();
         }
 
-        public List<Contact> GetContactsWithCompanyAndCountry()
+        public async Task<List<Contact>> GetContactsWithCompanyAndCountryAsync()
         {
-            return _context.Contacts
+            return await _context.Contacts
                 .Include(c => c.Company)
                 .Include(c => c.Country)
-                .ToList();
+                .ToListAsync();
         }
 
-     
+
     }
 }
