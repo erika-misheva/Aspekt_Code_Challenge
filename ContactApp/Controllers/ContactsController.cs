@@ -1,104 +1,124 @@
 ﻿using AutoMapper;
-using ContactApp.Domain.DTOs.Contact;
-using ContactApp.Domain.DTOs.Shared;
-using ContactApp.Domain.Models;
-using ContactApp.Interfaces;
-using ContactApp.Repositories;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ContactApp.Controllers
+namespace ContactApp.Controllers;
+
+using Domain.Common;
+using Data.Interfaces;
+using Domain.DTOs.Contact;
+using Domain.DTOs.Shared;
+using Domain.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+
+
+[Route("api/[controller]")]
+[ApiController]
+public class ContactsController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ContactsController : ControllerBase
+    private readonly IContactRepository _contactRepository;
+    private readonly IMapper _mapper;
+    private readonly IRepository<Country> _countryRepository;
+    private readonly IRepository<Company> _companyRepository;
+
+    public ContactsController(
+        IContactRepository contactRepository,
+        IMapper mapper,
+        IRepository<Country> countryRepository,
+        IRepository<Company> companyRepository)
     {
-        private readonly IContactRepository _contactRepository;
-        private readonly IMapper _mapper;
+        _contactRepository = contactRepository;
+        _mapper = mapper;
+        _countryRepository = countryRepository;
+        _companyRepository = companyRepository;
+    }
 
-        public ContactsController(IContactRepository contactRepository, IMapper mapper)
+    [HttpGet]
+    public async Task<ActionResult<List<EntityDto>>> GetContacts()
+    {
+        var contacts = await _contactRepository.GetAllAsync();
+        return _mapper.Map<List<EntityDto>>(contacts);
+    }
+
+    [HttpGet("{id}")]
+
+    public async Task<ActionResult<EntityDto>> GetContact(int id)
+    {
+        var contact = await _contactRepository.GetByIdAsync(id);
+
+        if (contact is null)
         {
-            _contactRepository = contactRepository;
-            _mapper = mapper;
+            return NotFound();
         }
 
-        [HttpGet]
-        public async Task<ActionResult<List<EntityDto>>> GetContacts()
+        return _mapper.Map<EntityDto>(contact);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult> Create(CreateContactDto contactDto)
+    {
+        Contact newContact = _mapper.Map<Contact>(contactDto);
+        bool companyExists = await _countryRepository.EntityExistsAsync(newContact.CountryId);
+        bool countryExists = await _companyRepository.EntityExistsAsync(newContact.CompanyId);
+
+        if (!companyExists || !countryExists)
         {
-            var contacts = await _contactRepository.GetAllAsync();
-            return _mapper.Map<List<EntityDto>>(contacts);
+            return NotFound("The Company or Country could not be found");
         }
 
-        [HttpGet("{id}")]
+        await _contactRepository.AddAsync(newContact);
+        await _contactRepository.SavedAsync();
 
-        public async Task<ActionResult<EntityDto>> GetContact(int id)
+        return StatusCode(StatusCodes.Status201Created, ResponseDetail.Created(newContact.Id));
+    }
+
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(int id, UpdateEntityDto updateContact)
+    {
+
+        if (! await _contactRepository.EntityExistsAsync(id))
         {
-            var contact = await _contactRepository.GetByIdAsync(id);
+            return NotFound();
+        }
+        Contact contact = await _contactRepository.GetByIdAsync(id);
+      
+        contact.Name = updateContact.Name;
 
-            if (contact is null)
-            {
-                return NotFound();
-            }
+        _contactRepository.Update(contact);
+        await _contactRepository.SavedAsync();
 
-            return _mapper.Map<EntityDto>(contact);
+        var updatedContact = _mapper.Map<EntityDto>(contact);
+
+        return Ok(updatedContact);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteAsync(int id)
+    {
+        if (!await _contactRepository.EntityExistsAsync(id))
+        {
+            return NotFound();
         }
 
-        [HttpPost]
-        public async Task<ActionResult> Create(CreateContactDto contactDto)
-        {
-            Contact newContact = _mapper.Map<Contact>(contactDto);
+        await _contactRepository.DeleteAsync(id);
+        await _contactRepository.SavedAsync();
 
-            await _contactRepository.AddAsync(newContact);
-            await _contactRepository.SavedAsync();
+        return Ok();
+    }
 
-            return StatusCode(StatusCodes.Status201Created);
-        }
+    [HttpGet("filter")]
 
+    public async Task<ActionResult<List<ContactDto>>> FilterContacts (int? countryId = null, int? companyId = null)
+    {
+        List<Contact> contacts = (List<Contact>)await _contactRepository.FilterContactsAsync(countryId, companyId);
+        return _mapper.Map<List<ContactDto>>(contacts);
+    }
 
-        [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, UpdateEntityDto updateContact)
-        {
+    [HttpGet("fullInformation")]
 
-            if (! await _contactRepository.EntityExistsAsync(id))
-            {
-                return NotFound();
-            }
-            Contact contact = await _contactRepository.GetByIdAsync(id);
-            contact.Name = updateContact.Name;
-
-            await _contactRepository.SavedAsync();
-
-            return Ok();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteAsync(int id)
-        {
-            if (!await _contactRepository.EntityExistsAsync(id))
-            {
-                return NotFound();
-            }
-
-            await _contactRepository.DeleteAsync(id);
-            await _contactRepository.SavedAsync();
-
-            return Ok();
-        }
-
-        [HttpGet("filter")]
-
-        public async Task<ActionResult<List<ContactDto>>> FilterContacts (int? countryId = null, int? companyId = null)
-        {
-            List<Contact> contacts = (List<Contact>)await _contactRepository.FilterContactsAsync(countryId, companyId);
-            return _mapper.Map<List<ContactDto>>(contacts);
-        }
-
-        [HttpGet("fullInformation/contacts")]
-
-        public async Task<ActionResult<List<ContactDto>>> GetContactsWithCompanyAndCountry()
-        {
-            List<Contact> contacts = await _contactRepository.GetContactsWithCompanyAndCountryAsync();
-            return _mapper.Map<List<ContactDto>>(contacts);
-        }
+    public async Task<ActionResult<List<ContactDto>>> GetContactsWithCompanyAndCountry()
+    {
+        List<Contact> contacts = await _contactRepository.GetContactsWithCompanyAndCountryAsync();
+        return _mapper.Map<List<ContactDto>>(contacts);
     }
 }

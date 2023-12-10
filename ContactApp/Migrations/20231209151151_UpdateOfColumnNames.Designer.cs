@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ContactApp.Migrations
 {
-    [DbContext(typeof(DataContext))]
+    [DbContext(typeof(ContactDbContext))]
     [Migration("20231209151151_UpdateOfColumnNames")]
     partial class UpdateOfColumnNames
     {
