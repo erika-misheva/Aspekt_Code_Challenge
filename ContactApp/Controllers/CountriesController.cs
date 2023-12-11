@@ -23,7 +23,7 @@ public class CountriesController : ControllerBase
 
     [HttpGet]
 
-    public async Task<ActionResult<List<EntityDto>>> GetCountries()
+    public async Task<ActionResult<List<EntityDto>>> GetCountriesAsync()
     {
         var countries = await _countryRepository.GetAllAsync();
         return _mapper.Map<List<EntityDto>>(countries);
@@ -31,42 +31,62 @@ public class CountriesController : ControllerBase
 
     [HttpGet("{id}")]
 
-    public async Task<ActionResult<EntityDto>> GetCountry(int id)
+    public async Task<ActionResult<EntityDto>> GetCountryAsync(int id)
     {
         var country = await _countryRepository.GetByIdAsync(id);
 
         if (country is null)
         {
-            return NotFound();
+            return NotFound(ResponseDetail.NotFound(entity: nameof(Country), id));
         }
 
         return _mapper.Map<EntityDto>(country);
     }
 
     [HttpPost]
-    public async Task<ActionResult> Create(UpdateEntityDto countryDto)
+    public async Task<ActionResult> CreateAsync(UpdateEntityDto createCountry)
     {
-        Country newCountry = _mapper.Map<Country>(countryDto);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        Country newCountry = _mapper.Map<Country>(createCountry);
 
         await _countryRepository.AddAsync(newCountry);
-        await _countryRepository.SavedAsync();
-
+        try
+        {
+            await _countryRepository.SavedAsync();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
         return StatusCode(StatusCodes.Status201Created, ResponseDetail.Created(newCountry.Id));
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> Update(int id, UpdateEntityDto updateCountry)
+    public async Task<ActionResult> UpdateAsync(int id, UpdateEntityDto updateCountry)
     {
-
         if (! await _countryRepository.EntityExistsAsync(id))
         {
-            return NotFound();
+            return NotFound(ResponseDetail.NotFound(entity: nameof(Country), id));
+        }
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
         }
         Country country = await _countryRepository.GetByIdAsync(id);
         country.Name = updateCountry.Name;
 
         _countryRepository.Update(country);
-        await _countryRepository.GetAllAsync();
+        try
+        {
+            await _countryRepository.SavedAsync();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
 
         var updatedCountry = _mapper.Map<EntityDto>(country);
 
@@ -74,16 +94,23 @@ public class CountriesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> DeleteAsync(int id)
     {
         if (!await _countryRepository.EntityExistsAsync(id))
         {
-            return NotFound();
+            return NotFound(ResponseDetail.NotFound(entity: nameof(Country), id));
         }
 
        await _countryRepository.DeleteAsync(id);
-       await _countryRepository.SavedAsync();
+        try
+        {
+            await _countryRepository.SavedAsync();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+        }
 
-        return Ok();
+        return NoContent();
     }
 }
